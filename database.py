@@ -7,7 +7,10 @@ class Users(SQLModel, table=True):
     email: str
     password: str
 
-    folders: List["Folders"] = Relationship(back_populates="user")
+    folders: List["Folders"] = Relationship(
+        back_populates="user",
+        sa_relationship_kwargs={"cascade": "all, delete"} # When a user is deleted, all of its folders are too
+    )
 
 # Defines the folders table
 class Folders(SQLModel, table=True):
@@ -17,7 +20,10 @@ class Folders(SQLModel, table=True):
     user_id: Optional[int] = Field(default=None, foreign_key="users.id")
 
     user: Optional[Users] = Relationship(back_populates="folders")
-    flashcards: List["Flashcards"] = Relationship(back_populates="folder")
+    flashcards: List["Flashcards"] = Relationship(
+        back_populates="folder",
+        sa_relationship_kwargs={"cascade": "all, delete"} # When a folder is deleted, all of its flashcards are too
+    )
 
 # Defines the flashcards table
 class Flashcards(SQLModel, table=True):
