@@ -25,12 +25,14 @@ uvicorn main:app --reload
 Swagger docs → http://127.0.0.1:8000/docs
 ```
 ## 🗂️ Project Structure
+```
 easyFlashcards/
 ├── main.py          # FastAPI app and endpoints
 ├── database.py      # Database models and engine setup
 ├── requirements.txt # Dependencies
 ├── README.md        # Project instructions
 └── flashcards.db    # SQLite database (auto-created)
+```
 
 ## 🧩 Example Endpoints
 ➕ Create a user
