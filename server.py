@@ -69,6 +69,10 @@ def create_folder(
     folder_data: FolderCreate,
     session: Session = Depends(get_session)
 ):
+    user = session.get(Users, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
     # Checks for folders with same name under the same user
     existing_folder = session.exec(
         select(Folders).where(
@@ -77,10 +81,6 @@ def create_folder(
     ).first()
     if existing_folder:
         raise HTTPException(status_code=400, detail="Folder name already used.")
-
-    user = session.get(Users, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found.")
 
     folder = Folders(
         name=folder_data.name,
@@ -187,3 +187,41 @@ def delete_flashcard(
     session.delete(flashcard)
     session.commit()
     return {"message": f"Flashcard {flashcard.id} deleted."}
+
+# Retrieve all user's folders
+@app.get("/users/{user_id}/folders")
+def get_all_folders(
+    user_id: int,
+    session: Session = Depends(get_session)
+):
+    user = session.get(Users, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    folders = session.exec(
+        select(Folders).where(Folders.user_id == user_id)
+    ).all()
+    return folders
+
+# Retrieve all user's folder's flashcards
+@app.get("/users/{user_id}/folders/{folder_id}/flashcards")
+def get_all_flashcards(
+    user_id: int,
+    folder_id: int,
+    session: Session = Depends(get_session)
+):
+    user = session.get(Users, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    
+    folder = session.get(Folders, folder_id)
+    if not folder:
+        raise HTTPException(status_code=404, detail="Folder not found.")
+    
+    if folder.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Permission denied.")
+    
+    flashcards = session.exec(
+        select(Flashcards).where(Flashcards.folder_id == folder_id)
+    ).all()
+    return flashcards
