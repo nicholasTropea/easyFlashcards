@@ -47,6 +47,11 @@ def create_user(
     user_data: UserCreate,
     session: Session = Depends(get_session)
 ):
+    # Checks for users with same email
+    existing_user = session.exec(select(Users).where(Users.email == user_data.email)).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered.")
+
     user = Users(
         email=user_data.email,
         password=user_data.password
@@ -64,6 +69,15 @@ def create_folder(
     folder_data: FolderCreate,
     session: Session = Depends(get_session)
 ):
+    # Checks for folders with same name under the same user
+    existing_folder = session.exec(
+        select(Folders).where(
+            (Folders.user_id == user_id) & (folder_data.name == Folders.name)
+        )
+    ).first()
+    if existing_folder:
+        raise HTTPException(status_code=400, detail="Folder name already used.")
+
     user = session.get(Users, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found.")
