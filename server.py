@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlmodel import Session, select
-from database import engine, Users, Folders, Flashcards, create_db
+from database import engine, Users, Folders, Flashcards, create_db, SQLModel
 from pydantic import BaseModel
 
 # Creates the web app and listens for HTTP requests
@@ -27,6 +27,15 @@ class FlashcardCreate(BaseModel):
     question: str
     answer: str
 
+
+# Development debugging only
+@app.post("/reset-db")
+def reset_database():
+    # Drop all tables
+    SQLModel.metadata.drop_all(engine)
+    # Recreate tables
+    SQLModel.metadata.create_all(engine)
+    return {"message": "Database has been reset!"}
 
 @app.get("/")
 def root():
@@ -55,6 +64,10 @@ def create_folder(
     folder_data: FolderCreate,
     session: Session = Depends(get_session)
 ):
+    user = session.get(Users, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
     folder = Folders(
         name=folder_data.name,
         user_id=user_id
@@ -68,11 +81,22 @@ def create_folder(
 # Create new flashcard
 @app.post("/users/{user_id}/folders/{folder_id}/flashcards/")
 def create_flashcard(
-    user_id: int, # NOT USED, JUST FOR PATH CLARITY
+    user_id: int,
     folder_id: int,
     flashcard_data: FlashcardCreate,
     session: Session = Depends(get_session)
 ):
+    user = session.get(Users, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    folder = session.get(Folders, folder_id)
+    if not folder:
+        raise HTTPException(status_code=404, detail="Folder not found.")
+    
+    if folder.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Permission denied.")
+
     flashcard = Flashcards(
         question=flashcard_data.question,
         answer=flashcard_data.answer,
