@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
+from sqlalchemy import exc
 from database import engine, Users
 from models.user import UserCreate, UserRead
 from security import hash_password, validate_password, verify_password, Psw_Validation_Results
@@ -47,8 +48,13 @@ def create_user(
         hashed_password=hashed_pw
     )
     
-    session.add(user)
-    session.commit()
+    try:
+        session.add(user)
+        session.commit()
+    except exc.IntegrityError:
+        session.rollback()
+        raise HTTPException(status_code=409, detail="Email already registered.")
+
     session.refresh(user)
     return user
 

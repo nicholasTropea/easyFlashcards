@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
+from sqlalchemy import exc
 from database import engine, Users, Folders
 from models.folder import FolderCreate, FolderRead
 
@@ -38,8 +39,13 @@ def create_folder(
         user_id=user_id
     )
 
-    session.add(folder)
-    session.commit()
+    try:
+        session.add(folder)
+        session.commit()
+    except exc.IntegrityError:
+        session.rollback()
+        raise HTTPException(status_code=409, detail="Folder name already used.")
+
     session.refresh(folder)
     return folder
 

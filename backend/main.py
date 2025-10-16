@@ -34,7 +34,3 @@ def reset_database():
     # Recreate tables
     SQLModel.metadata.create_all(engine)
     return {"message": "Database has been reset!"}
-
-@app.get("/")
-def root():
-    return {"message": "Welcome to EasyFlashcards!"}

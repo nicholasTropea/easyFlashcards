@@ -1,4 +1,5 @@
 from sqlmodel import SQLModel, Field, Relationship, create_engine
+from sqlalchemy import UniqueConstraint
 from typing import Optional, List
 
 
@@ -12,6 +13,8 @@ engine = create_engine(DATABASE_URL, echo=False)
 
 # Defines the users table
 class Users(SQLModel, table=True):
+    __table_args__ = (UniqueConstraint("email"),) # Emails must differ
+
     id: Optional[int] = Field(default=None, primary_key=True)
     email: str
     hashed_password: str
@@ -23,6 +26,10 @@ class Users(SQLModel, table=True):
 
 # Defines the folders table
 class Folders(SQLModel, table=True):
+    __table_args__ = (
+        UniqueConstraint("name", "user_id", name="uq_folders_user_name")
+    ,)
+
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
 
