@@ -18,7 +18,8 @@ venv\Scripts\activate       # On Windows
 # 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Run the server
+# 3. Move into backend/ and run the server
+cd backend
 uvicorn server:app --reload
 ```
 
