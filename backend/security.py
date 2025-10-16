@@ -16,11 +16,17 @@ class Psw_Validation_Results(int, Enum):
     SPECIAL = -5
 
 
+# Load environmnet variables
 load_dotenv()
 PEPPER = os.getenv("PASSWORD_PEPPER", "") # Fallback to empty if not set
+if not PEPPER:
+    raise RuntimeError("Missing PASSWORD_PEPPER in .env file")
 
 # Creates password context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+# -- CORE HASHING FUNCTIONS ---
 
 # Returns 32-byte digest (safe for bcrypt since it handles max 72 bytes)
 def _prehash(password: str) -> bytes:
@@ -31,6 +37,9 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password) -> bool:
     return pwd_context.verify(_prehash(plain_password), hashed_password)
+
+
+# --- PASSWORD STRENGTH VALIDATOR ---
 
 def validate_password(plain_password: str) -> int:
     SPECIAL_CHARS = "%/@#!?()&_-*+"

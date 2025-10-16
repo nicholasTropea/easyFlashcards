@@ -1,6 +1,15 @@
 from sqlmodel import SQLModel, Field, Relationship, create_engine
 from typing import Optional, List
 
+
+# --- DATABASE CONFIGUTATION ---
+
+DATABASE_URL = "sqlite:///./easyflashcards.db"
+engine = create_engine(DATABASE_URL, echo=False)
+
+
+# --- MODELS ---
+
 # Defines the users table
 class Users(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -36,13 +45,8 @@ class Flashcards(SQLModel, table=True):
     folder: Optional[Folders] = Relationship(back_populates="flashcards")
 
 
-# Creates the SQLite database file
-engine = create_engine("sqlite:///flashcards.db")
+# --- DATABASE CREATION ---
 
 # Creates tables
 def create_db():
     SQLModel.metadata.create_all(engine)
-
-if __name__ == "__main__":
-    create_db()
-    print("Database created: flashcards.db")
