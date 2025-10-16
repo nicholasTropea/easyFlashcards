@@ -1,7 +1,12 @@
+# Used for database and API
 from fastapi import FastAPI, Depends, HTTPException
 from sqlmodel import Session, select
 from database import engine, Users, Folders, Flashcards, create_db, SQLModel
 from pydantic import BaseModel
+
+# Used for password hashing
+from security import hash_password, verify_password, validate_password, Psw_Validation_Results
+
 
 # Creates the web app and listens for HTTP requests
 app = FastAPI()
@@ -41,6 +46,20 @@ def reset_database():
 def root():
     return {"message": "Welcome to EasyFlashcards!"}
 
+# Login user
+@app.post("/login/")
+def login(
+    credentials: UserCreate,
+    session: Session = Depends(get_session)
+):
+    user = session.exec(
+        select(Users).where(Users.email == credentials.email)
+    ).first()
+    if not user or not verify_password(credentials.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid credentials.")
+    
+    return {"message": "Login successful!"}
+
 # Create new user
 @app.post("/users/")
 def create_user(
@@ -52,9 +71,24 @@ def create_user(
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered.")
 
+    # Checks for password validity
+    errno = validate_password(user_data.password)
+    if errno == Psw_Validation_Results.CHARS:
+        raise HTTPException(status_code=400, detail="Password must be at least 10 characters long.")
+    elif errno == Psw_Validation_Results.UPPERCASE:
+        raise HTTPException(status_code=400, detail="Password must contain an uppercase character.")
+    elif errno == Psw_Validation_Results.LOWERCASE:
+        raise HTTPException(status_code=400, detail="Password must contain a lowercase character.")
+    elif errno == Psw_Validation_Results.DIGIT:
+        raise HTTPException(status_code=400, detail="Password must contain a digit.")        
+    elif errno == Psw_Validation_Results.SPECIAL:
+        raise HTTPException(status_code=400, detail="Password must contain one of these characters: % / @ # ! ? ( ) & _ - * +")        
+        
+    hashed_pw = hash_password(user_data.password)
+
     user = Users(
         email=user_data.email,
-        password=user_data.password
+        hashed_password=hashed_pw
     )
     
     session.add(user)

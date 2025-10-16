@@ -5,7 +5,7 @@ from typing import Optional, List
 class Users(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     email: str
-    password: str
+    hashed_password: str
 
     folders: List["Folders"] = Relationship(
         back_populates="user",
